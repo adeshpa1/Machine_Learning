@@ -56,11 +56,13 @@ plotNormalHistogram(Archery$Total.score..F.,main = "Normal Histogram")
 
 #Log transformation
 T_log = log(Archery$Total.score..F.)
+print(T_log)
 library(rcompanion)
 plotNormalHistogram(T_log, main = "Total Score")
 
 #squareroot transformation
 T_sqrt = sqrt(Archery$Total.score..F.)
+print(T_sqrt)
 library(rcompanion)
 plotNormalHistogram(T_sqrt, main = "Total Score")
 
