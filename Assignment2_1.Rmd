@@ -1,0 +1,134 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+# Needed Library
+
+library(caret)
+library(dplyr)
+library(MASS)
+library(FNN)
+library(class)
+
+# Read Data
+
+UniversalBank <- read.csv("UniversalBank.csv")
+head(UniversalBank)
+str(UniversalBank)
+
+```
+
+
+```{r}
+#1
+#Remove columns ID & ZIP columns
+
+UniversalBank <- UniversalBank[,c(-1,-5)]
+str(UniversalBank)
+
+#Dummy Variables
+
+test_0 <- UniversalBank$Education
+Testfactor <- factor(test_0, label=c("E1","E2","E3"))
+str(Testfactor)
+UniversalBank[["Education"]] <- Testfactor
+levels(UniversalBank$Education)
+
+#dummyVars function
+
+Dummy<- dummyVars("~Education", data=UniversalBank)
+y <- predict(Dummy,newdata=UniversalBank)
+print(y)
+UniversalBank <- cbind(UniversalBank, y)
+UniversalBank <- UniversalBank[, c(-6)]
+```
+
+
+```{r}
+#NOrmalization
+
+Norm<-preProcess(UniversalBank, method = c('range'))
+Default_Norm<-predict(Norm,UniversalBank)
+summary(Default_Norm)
+
+#Data partitioning as Train and Validation Data
+
+set.seed(10)
+partition <- createDataPartition(Default_Norm$Personal.Loan, p=0.6, list=FALSE)
+Train_Data <- Default_Norm[partition,]
+dim(Train_Data)
+Validation_data <- Default_Norm[-partition,]
+dim(Validation_data)
+
+Train_Predictors<-Train_Data[,-7]
+validation_Predictors<-Validation_data[,-7]
+Train_labels <-Train_Data[,7]
+Validation_labels  <-Validation_data[,7] 
+Validation_labels <- as.factor(Validation_labels)
+
+#K-NN classification using k=1
+
+PredictedTest_labels <- knn(Train_Predictors,validation_Predictors,cl=Train_labels,k=1,prob = TRUE)
+str(PredictedTest_labels)
+
+#Finding particular values for variables-> 1=loan acceptance, 0=loan denial
+
+test_1 <- c(40, 10, 84, 2, 2, 0, 0, 0, 1, 1, 0, 1, 0)
+PredictedTest_label2 <- knn(Train_Predictors, test_1, cl=Train_labels, k=1, prob = TRUE)
+PredictedTest_label2
+str(PredictedTest_label2)
+
+```
+
+
+```{r}
+#2
+#choice of k-> best k
+
+library(e1071)
+accuracy.df <- data.frame(k = seq(1, 10, 1), accuracy = rep(0, 10))
+
+Validation_labels<-as.factor(Validation_labels)
+Validation_labels
+
+# Computing k-NN 
+
+for(i in 1:10) {
+  PredictedTest_labels3 <- knn(Train_Predictors, validation_Predictors, cl=Train_labels, k=i,prob = TRUE)
+  accuracy.df[i, 2] <- confusionMatrix(PredictedTest_labels3, Validation_labels)$overall[1] 
+}
+accuracy.df
+head(which.max(accuracy.df$accuracy))
+```
+
+
+```{r}
+#3
+#Confusion matrix for the validation data that results from using the best k
+
+library("gmodels")
+PredictedTest_label4 <- knn(Train_Predictors, validation_Predictors, cl=Train_labels, k=3)
+PredictedTest_label4
+CrossTable(x=Validation_labels,y=PredictedTest_label4 ,prop.chisq = FALSE) 
+
+```
+
+
+```{r}
+#4
+#classifying using best k->k=3
+
+test_2 <- c(40, 10, 84, 2, 2, 0, 0, 0, 1, 1, 0, 1, 0)
+PredictedTest_label3 <- knn(Train_Predictors,test_2 , cl=Train_labels, k=3, prob = TRUE)
+PredictedTest_label3
+str(PredictedTest_label3)
+
+```

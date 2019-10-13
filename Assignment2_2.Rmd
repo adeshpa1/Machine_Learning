@@ -1,0 +1,110 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+#5
+# Needed Library
+
+library(caret)
+library(dplyr)
+library(MASS)
+library(FNN)
+library(class)
+
+# Read Data
+
+UniversalBank <- read.csv("UniversalBank.csv")
+head(UniversalBank)
+str(UniversalBank)
+
+```
+
+
+```{r}
+
+#Remove columns ID & ZIP columns
+
+UniversalBank <- UniversalBank[,c(-1,-5)]
+str(UniversalBank)
+
+#Dummy Variables
+
+test_0 <- UniversalBank$Education
+Test_factor <- factor(test_0, label =c("E1","E2","E3"))
+str(Test_factor)
+UniversalBank[["Education"]] <- Test_factor
+levels(UniversalBank$Education)
+
+#dummyVars function
+
+Dummy<- dummyVars("~Education", data=UniversalBank)
+y <- predict(Dummy,newdata=UniversalBank)
+#print(y)
+UniversalBank <- cbind(UniversalBank, y)
+UniversalBank <- UniversalBank[, c(-6)]
+
+#NOrmalization
+
+Norm<-preProcess(UniversalBank, method = c("range"))
+Default_Norm<-predict(Norm,UniversalBank)
+summary(Default_Norm)
+
+```
+
+
+```{r}
+#Data partitioning as Train, Test and Validation Data
+
+set.seed(10)
+Test_Index <- createDataPartition(Default_Norm$Personal.Loan,p=0.2, list=FALSE) # 20% Test data
+Test_Data <- UniversalBank[Test_Index,]
+TraVal_Data <- UniversalBank[-Test_Index,]
+
+Train_Index = createDataPartition(TraVal_Data$Personal.Loan,p=0.625, list=FALSE) # 50% of remaining data is training and 30% is validation data.
+Train_Data = TraVal_Data[Train_Index,]
+Validation_Data = TraVal_Data[-Train_Index,] 
+summary(Train_Data)
+
+Train_Predictors<-Train_Data[,-7]
+validation_Predictors<- Validation_Data[,-7]
+Train_labels <- Train_Data[,7]
+Validation_labels  <-Validation_Data[,7]
+test_labels <- Test_Data[,7]
+test_predictors <- Test_Data[,-7]
+
+```
+
+
+```{r}
+#K-NN classification 
+
+PredictedTest_labels <- knn(Train_Predictors, test_predictors, cl=Train_labels, k=3, prob = TRUE)
+str(PredictedTest_labels)
+
+PredictedValid_labels <- knn(Train_Predictors, validation_Predictors, cl=Train_labels, k=3, prob = TRUE)
+str(PredictedValid_labels)
+
+```
+
+
+```{r}
+
+#confusion Matrix of the test set with the training and validation sets
+
+library(gmodels)
+CrossTable(x=Validation_labels, y=PredictedValid_labels, prop.chisq = FALSE)
+
+CrossTable(x=test_labels, y=PredictedTest_labels, prop.chisq = FALSE)
+
+```
+#The Accuracy for the Validation Data is: 91.06%
+
+#The Accuracy for the Testing Data is: 90%
