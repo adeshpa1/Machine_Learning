@@ -1,0 +1,103 @@
+---
+title: "Naive Bayes"
+author: "AmrutaD"
+date: "10/24/2019"
+output: html_document
+---
+
+Problem :-
+
+Predicting flight delays can be useful to a variety of organizations. Here,
+we look at five predictors. The outcome of interest is whether or not the flight is delayed (delayed here means
+arrived more than 15 minutes late). Our data consist of all flights from the Washington, DC area into the New York City area during January 2004. A record is a particular flight. The percentage of delayed flights among these 2201 flights
+is 19.5%. The data were obtained from the Bureau of Transportation Statistics (available on the web at www.transtats.bts.gov). The goal is to accurately predict whether or not a new flight (not in this dataset), will be delayed. The outcome variable is whether the flight was delayed, and thus it has two classes (1 = delayed
+and 0 = on time).
+
+Solution :-
+
+* Using Library and reading the data :-
+
+```{r}
+
+library(ISLR)
+library(caret)
+library(dummies)
+library(gmodels)
+library(pROC)
+library(e1071)
+
+Flight_Delay <- read.csv("FlightDelays.csv")
+
+```
+
+Q2) Run the Naive Bayes model to predict whether the flight is delayed or not. Use only categorical variables for the predictor variables. Note that Week and Time variables need to recoded as factors. 
+
+* Factorising the Day of the Month and Week column :-
+
+```{r}
+Flight_Delay$DAY_OF_MONTH <- factor(Flight_Delay$DAY_OF_MONTH)
+Flight_Delay$DAY_WEEK <- factor(Flight_Delay$DAY_WEEK, levels = c(1,2,3,4,5,6,7), labels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+Flight_Delay$CRS_DEP_TIME <- factor(round(Flight_Delay$CRS_DEP_TIME/100),labels = c("6-7 AM Slot","7-8 AM Slot","8-9 AM Slot", "9-10 AM Slot", "10-11 AM Slot", "11-12 PM Slot", "12-1 PM Slot", "1-2 PM Slot", "2-3 PM Slot", "3-4 PM Slot", "4-5 PM Slot", "5-6 PM Slot", "6-7 PM Slot", "7-8 PM Slot", "8-9 PM Slot", "9-10 PM Slot"))
+
+Flight_Delay <- Flight_Delay[, c(1,2,4,8,10,13)]
+head(Flight_Delay)
+
+```
+
+Q1) Divide the data into 60% training and 40% validation.
+
+* Dividing the data as training and validation data :-
+
+```{r}
+
+set.seed(10)
+Train_Data_Index <- createDataPartition(Flight_Delay$CARRIER, p= 0.6, list = FALSE)
+
+Train_Data <-  Flight_Delay[Train_Data_Index,]
+Validation_Data <-  Flight_Delay[-Train_Data_Index,]
+
+```
+
+Q2) Run the Naive Bayes model to predict whether the flight is delayed or not.
+
+* Naive Bayes Model :-
+```{r}
+
+NB <- naiveBayes(Flight.Status~DAY_WEEK+CRS_DEP_TIME+ORIGIN+DEST+CARRIER, data=Train_Data)
+NB
+
+```
+
+Q3) Output both a counts table and a proportion table outlining how many and what proportion of    flights were delayed and on-time at each of the three airports.
+
+* Proportion at which flights were delayed or on-time at three airports, displayed in Proportion table :-
+
+```{r}
+
+Flight_Delay_Status<- table(Train_Data$Flight.Status, Train_Data$DEST)
+Flight_Delay_Status
+prop.table(Flight_Delay_Status)
+
+```
+Q4) Output the confusion matrix and ROC for the validation data.
+
+* Confusion Matrix :-
+
+```{r}
+
+Validation_Label <- predict(NB, Validation_Data)
+CrossTable(x = Validation_Data$Flight.Status, y = Validation_Label, prop.chisq = FALSE)
+confusionMatrix(Validation_Label, Validation_Data$Flight.Status)
+
+```
+* ROC :-
+
+```{r}
+
+Validation_Label_Raw <- predict(NB, Validation_Data, type = "raw")
+head(Validation_Label_Raw)
+roc(Validation_Data$Flight.Status, Validation_Label_Raw[,2])
+plot.roc(Validation_Data$Flight.Status, Validation_Label_Raw[,2])
+
+```
