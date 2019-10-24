@@ -1,24 +1,27 @@
 ---
-title: "R Notebook"
+title: "k-NN"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+Problem:-
+Universal bank is a young bank growing rapidly in terms of overall customer acquisition. The majority of these customers are liability customers (depositors) with varying sizes of relationship with the bank. The customer base of asset customers (borrowers) is quite small, and the bank is interested in expanding this base  rapidly in more loan business. In particular, it wants to explore ways of converting its liability customers to personal loan customers.
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+A campaign that the bank ran last year for liability customers showed a healthy conversion rate of over 9% success. This has encouraged the retail marketing department to devise smarter campaigns with better target marketing. The goal is to use k-NN to predict whether a new customer will accept a loan offer. This will serve as the basis for the design of a new campaign.
+
+The file UniversalBank.csv contains data on 5000 customers. The data include customer demographic information (age, income, etc.), the customer’s relationship with the bank (mortgage, securities account, etc.), and the customer response to the last personal loan campaign (Personal Loan). Among these 5000 customers, only 480 (= 9.6%) accepted the personal loan that was offered to them in the earlier campaign.
+
+Solution:-
+
+*Using Libraries needed and reading the data :-
 
 ```{r}
-# Needed Library
 
 library(caret)
 library(dplyr)
-library(MASS)
 library(FNN)
-library(class)
-
-# Read Data
 
 UniversalBank <- read.csv("UniversalBank.csv")
 head(UniversalBank)
@@ -26,10 +29,12 @@ str(UniversalBank)
 
 ```
 
+Q1) Consider the following customer:
+Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0, Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1, and Credit Card = 1. Perform a k-NN classification with all predictors except ID and ZIP code using k = 1. Remember to transform categorical predictors with more than two categories into dummy variables first. Specify the success class as 1 (loan acceptance), and use the default cutoff value of 0.5. How would this customer be classified?
+
+* Transforming categorical predictors into dummy variables and Elementing the ID and ZIP code:-
 
 ```{r}
-#1
-#Remove columns ID & ZIP columns
 
 UniversalBank <- UniversalBank[,c(-1,-5)]
 str(UniversalBank)
@@ -37,42 +42,41 @@ str(UniversalBank)
 #Dummy Variables
 
 test_0 <- UniversalBank$Education
-Testfactor <- factor(test_0, label=c("E1","E2","E3"))
+Testfactor <- factor(test_0, labels=c("E1","E2","E3"))
 str(Testfactor)
 UniversalBank[["Education"]] <- Testfactor
 levels(UniversalBank$Education)
 
-#dummyVars function
-
 Dummy<- dummyVars("~Education", data=UniversalBank)
 y <- predict(Dummy,newdata=UniversalBank)
-print(y)
 UniversalBank <- cbind(UniversalBank, y)
 UniversalBank <- UniversalBank[, c(-6)]
+
 ```
 
+* Partitioning the data into training as 60% and validation as 40% sets; Normalization of the data and k-NN classification using k=1 :-
 
 ```{r}
-#NOrmalization
-
-Norm<-preProcess(UniversalBank, method = c('range'))
-Default_Norm<-predict(Norm,UniversalBank)
-summary(Default_Norm)
-
-#Data partitioning as Train and Validation Data
 
 set.seed(10)
-partition <- createDataPartition(Default_Norm$Personal.Loan, p=0.6, list=FALSE)
-Train_Data <- Default_Norm[partition,]
+partition <- createDataPartition(UniversalBank$Personal.Loan, p=0.6, list=FALSE)
+Train_Data <- UniversalBank[partition,]
 dim(Train_Data)
-Validation_data <- Default_Norm[-partition,]
+Validation_data <- UniversalBank[-partition,]
 dim(Validation_data)
 
-Train_Predictors<-Train_Data[,-7]
-validation_Predictors<-Validation_data[,-7]
-Train_labels <-Train_Data[,7]
-Validation_labels  <-Validation_data[,7] 
-Validation_labels <- as.factor(Validation_labels)
+#Normalization
+
+Norm<-preProcess(Train_Data, method = c('center', 'scale'))
+Train_Norm<-predict(Norm,Train_Data)
+summary(Train_Norm)
+Validation_Norm<-predict(Norm,Validation_data)
+summary(Validation_data)
+
+Train_Predictors<-Train_Norm[,-7]
+validation_Predictors<-Validation_Norm[,-7]
+Train_labels <-factor(Train_Data[,7], levels=c(0,1), labels = c("NO","YES"))
+Validation_labels <- factor(Validation_data[,7], levels=c(0,1), labels = c("NO","YES"))
 
 #K-NN classification using k=1
 
@@ -80,55 +84,54 @@ PredictedTest_labels <- knn(Train_Predictors,validation_Predictors,cl=Train_labe
 str(PredictedTest_labels)
 
 #Finding particular values for variables-> 1=loan acceptance, 0=loan denial
-
 test_1 <- c(40, 10, 84, 2, 2, 0, 0, 0, 1, 1, 0, 1, 0)
 PredictedTest_label2 <- knn(Train_Predictors, test_1, cl=Train_labels, k=1, prob = TRUE)
-PredictedTest_label2
 str(PredictedTest_label2)
 
 ```
 
+Q2) What is a choice of k that balances between overfitting and ignoring the predictor information?
 
+* Finding hypertuned 'k' value to get optimal k-NN :-
 ```{r}
-#2
-#choice of k-> best k
 
 library(e1071)
 accuracy.df <- data.frame(k = seq(1, 10, 1), accuracy = rep(0, 10))
-
 Validation_labels<-as.factor(Validation_labels)
-Validation_labels
-
-# Computing k-NN 
 
 for(i in 1:10) {
   PredictedTest_labels3 <- knn(Train_Predictors, validation_Predictors, cl=Train_labels, k=i,prob = TRUE)
   accuracy.df[i, 2] <- confusionMatrix(PredictedTest_labels3, Validation_labels)$overall[1] 
 }
 accuracy.df
-head(which.max(accuracy.df$accuracy))
+which.max(accuracy.df$accuracy)
+
 ```
 
+Q3) Show the confusion matrix for the validation data that results from using the best k.
+
+*Confusion matrix using hypertuned 'k' value i.e. k=3 :-
 
 ```{r}
-#3
-#Confusion matrix for the validation data that results from using the best k
 
 library("gmodels")
 PredictedTest_label4 <- knn(Train_Predictors, validation_Predictors, cl=Train_labels, k=3)
-PredictedTest_label4
 CrossTable(x=Validation_labels,y=PredictedTest_label4 ,prop.chisq = FALSE) 
 
 ```
+#Accuracy = 96.8%
+
+Q4)Consider the following customer: Age = 40, Experience = 10, Income = 84,
+Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0,
+Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1 and Credit
+Card = 1. Classify the customer using the best k.
 
 
+* Classified the customers using k=3 :- 
 ```{r}
-#4
-#classifying using best k->k=3
 
 test_2 <- c(40, 10, 84, 2, 2, 0, 0, 0, 1, 1, 0, 1, 0)
 PredictedTest_label3 <- knn(Train_Predictors,test_2 , cl=Train_labels, k=3, prob = TRUE)
-PredictedTest_label3
 str(PredictedTest_label3)
 
 ```

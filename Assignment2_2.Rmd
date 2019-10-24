@@ -3,23 +3,18 @@ title: "R Notebook"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
+  word_document: default
 ---
+Q5) Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). Apply the k-NN method with the k chosen above. Compare the confusion matrix of the test set with that of the training and validation sets. Comment on the differences and their reason.
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+*Using Libraries and reading data :-
 
 ```{r}
-#5
-# Needed Library
 
 library(caret)
 library(dplyr)
-library(MASS)
 library(FNN)
-library(class)
-
-# Read Data
 
 UniversalBank <- read.csv("UniversalBank.csv")
 head(UniversalBank)
@@ -27,10 +22,9 @@ str(UniversalBank)
 
 ```
 
+* Transforming categorical predictors into dummy variables and Elementing the ID and ZIP code:-
 
 ```{r}
-
-#Remove columns ID & ZIP columns
 
 UniversalBank <- UniversalBank[,c(-1,-5)]
 str(UniversalBank)
@@ -43,68 +37,66 @@ str(Test_factor)
 UniversalBank[["Education"]] <- Test_factor
 levels(UniversalBank$Education)
 
-#dummyVars function
-
 Dummy<- dummyVars("~Education", data=UniversalBank)
 y <- predict(Dummy,newdata=UniversalBank)
 #print(y)
 UniversalBank <- cbind(UniversalBank, y)
 UniversalBank <- UniversalBank[, c(-6)]
 
-#NOrmalization
-
-Norm<-preProcess(UniversalBank, method = c("range"))
-Default_Norm<-predict(Norm,UniversalBank)
-summary(Default_Norm)
-
 ```
 
+* Partitioning the data into training as 50%, validation as 30% and Test as 20% sets; Normalization of the data :-
 
 ```{r}
-#Data partitioning as Train, Test and Validation Data
 
 set.seed(10)
-Test_Index <- createDataPartition(Default_Norm$Personal.Loan,p=0.2, list=FALSE) # 20% Test data
+Test_Index <- createDataPartition(UniversalBank$Age,p=0.2, list=FALSE) # 20% Test data
 Test_Data <- UniversalBank[Test_Index,]
 TraVal_Data <- UniversalBank[-Test_Index,]
 
-Train_Index = createDataPartition(TraVal_Data$Personal.Loan,p=0.625, list=FALSE) # 50% of remaining data is training and 30% is validation data.
+Train_Index = createDataPartition(TraVal_Data$Age,p=0.625, list=FALSE) # 50% of remaining data is training and 30% is validation data.
 Train_Data = TraVal_Data[Train_Index,]
-Validation_Data = TraVal_Data[-Train_Index,] 
+Validation_data = TraVal_Data[-Train_Index,] 
 summary(Train_Data)
 
-Train_Predictors<-Train_Data[,-7]
-validation_Predictors<- Validation_Data[,-7]
-Train_labels <- Train_Data[,7]
-Validation_labels  <-Validation_Data[,7]
-test_labels <- Test_Data[,7]
-test_predictors <- Test_Data[,-7]
+#Normalization
+
+Norm<-preProcess(Train_Data, method = c("center","scale"))
+Train_Norm<-predict(Norm,Train_Data)
+Test_Norm<-predict(Norm,Test_Data)
+Validation_Norm<-predict(Norm,Validation_data)
+All_Data_Norm<-predict(Norm,UniversalBank)
+
+Train_Predictors<-Train_Norm[,-7]
+Test_predictors <- Test_Norm[,-7]
+validation_Predictors<- Validation_Norm[,-7]
+All_Data_Predictors<- All_Data_Norm[,-7]
+
+Train_labels <-factor(Train_Data[,7], levels=c(0,1), labels = c("NO","YES"))
+Validation_labels  <-factor(Validation_data[,7], levels=c(0,1), labels = c("NO","YES"))
+Test_labels <- factor(Test_Data[,7], levels=c(0,1), labels = c("NO","YES"))
+All_Data_labels <- factor(UniversalBank[,7], levels=c(0,1), labels = c("NO","YES"))
 
 ```
 
-
+* k-NN classification using k=3 :-
 ```{r}
-#K-NN classification 
 
-PredictedTest_labels <- knn(Train_Predictors, test_predictors, cl=Train_labels, k=3, prob = TRUE)
+PredictedTest_labels <- knn(Train_Predictors, Test_predictors, cl=Train_labels, k=3, prob = TRUE)
 str(PredictedTest_labels)
-
 PredictedValid_labels <- knn(Train_Predictors, validation_Predictors, cl=Train_labels, k=3, prob = TRUE)
 str(PredictedValid_labels)
 
 ```
 
+*Confusion matrix:-
 
 ```{r}
-
-#confusion Matrix of the test set with the training and validation sets
 
 library(gmodels)
 CrossTable(x=Validation_labels, y=PredictedValid_labels, prop.chisq = FALSE)
 
-CrossTable(x=test_labels, y=PredictedTest_labels, prop.chisq = FALSE)
+CrossTable(x=Test_labels, y=PredictedTest_labels, prop.chisq = FALSE)
 
 ```
-#The Accuracy for the Validation Data is: 91.06%
-
-#The Accuracy for the Testing Data is: 90%
+# When data was partitioned as 60% training and 40% as validation data, the hypertuned k value was 3. Using k=3 the accuracy derived was 96.8%. But when the data was partitioned as train 50% validation 30% and test 20%, while using k=3; Acuracy derived for Validation data is 95.86% and testing data is 95.10%. They accuracy might have decreased due to different partition variables.

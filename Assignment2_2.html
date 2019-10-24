@@ -1637,12 +1637,9 @@ summary {
 </div>
 
 
-<p>This is an <a href="http://rmarkdown.rstudio.com">R Markdown</a> Notebook. When you execute code within the notebook, the results appear beneath the code.</p>
-<p>Try executing this chunk by clicking the <em>Run</em> button within the chunk or by placing your cursor inside it and pressing <em>Ctrl+Shift+Enter</em>.</p>
-<pre class="r"><code>#5
-# Needed Library
-
-library(caret)</code></pre>
+<p>Q5) Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). Apply the k-NN method with the k chosen above. Compare the confusion matrix of the test set with that of the training and validation sets. Comment on the differences and their reason.</p>
+<p>*Using Libraries and reading data :-</p>
+<pre class="r"><code>library(caret)</code></pre>
 <pre><code>## Loading required package: lattice</code></pre>
 <pre><code>## Loading required package: ggplot2</code></pre>
 <pre class="r"><code>library(dplyr)</code></pre>
@@ -1654,20 +1651,7 @@ library(caret)</code></pre>
 <pre><code>## The following objects are masked from &#39;package:base&#39;:
 ## 
 ##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>library(MASS)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;MASS&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
-## 
-##     select</code></pre>
 <pre class="r"><code>library(FNN)
-library(class)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;class&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:FNN&#39;:
-## 
-##     knn, knn.cv</code></pre>
-<pre class="r"><code># Read Data
 
 UniversalBank &lt;- read.csv(&quot;UniversalBank.csv&quot;)
 head(UniversalBank)</code></pre>
@@ -1692,9 +1676,10 @@ head(UniversalBank)</code></pre>
 ##  $ CD.Account        : int  0 0 0 0 0 0 0 0 0 0 ...
 ##  $ Online            : int  0 0 0 0 0 1 1 0 1 0 ...
 ##  $ CreditCard        : int  0 0 0 0 1 0 0 1 0 0 ...</code></pre>
-<pre class="r"><code>#Remove columns ID &amp; ZIP columns
-
-UniversalBank &lt;- UniversalBank[,c(-1,-5)]
+<ul>
+<li>Transforming categorical predictors into dummy variables and Elementing the ID and ZIP code:-</li>
+</ul>
+<pre class="r"><code>UniversalBank &lt;- UniversalBank[,c(-1,-5)]
 str(UniversalBank)</code></pre>
 <pre><code>## &#39;data.frame&#39;:    5000 obs. of  12 variables:
 ##  $ Age               : int  25 45 39 35 35 37 53 50 35 34 ...
@@ -1718,105 +1703,85 @@ str(Test_factor)</code></pre>
 <pre class="r"><code>UniversalBank[[&quot;Education&quot;]] &lt;- Test_factor
 levels(UniversalBank$Education)</code></pre>
 <pre><code>## [1] &quot;E1&quot; &quot;E2&quot; &quot;E3&quot;</code></pre>
-<pre class="r"><code>#dummyVars function
-
-Dummy&lt;- dummyVars(&quot;~Education&quot;, data=UniversalBank)
+<pre class="r"><code>Dummy&lt;- dummyVars(&quot;~Education&quot;, data=UniversalBank)
 y &lt;- predict(Dummy,newdata=UniversalBank)
 #print(y)
 UniversalBank &lt;- cbind(UniversalBank, y)
-UniversalBank &lt;- UniversalBank[, c(-6)]
-
-#NOrmalization
-
-Norm&lt;-preProcess(UniversalBank, method = c(&quot;range&quot;))
-Default_Norm&lt;-predict(Norm,UniversalBank)
-summary(Default_Norm)</code></pre>
-<pre><code>##       Age           Experience         Income           Family      
-##  Min.   :0.0000   Min.   :0.0000   Min.   :0.0000   Min.   :0.0000  
-##  1st Qu.:0.2727   1st Qu.:0.2826   1st Qu.:0.1435   1st Qu.:0.0000  
-##  Median :0.5000   Median :0.5000   Median :0.2593   Median :0.3333  
-##  Mean   :0.5077   Mean   :0.5023   Mean   :0.3045   Mean   :0.4655  
-##  3rd Qu.:0.7273   3rd Qu.:0.7174   3rd Qu.:0.4167   3rd Qu.:0.6667  
-##  Max.   :1.0000   Max.   :1.0000   Max.   :1.0000   Max.   :1.0000  
-##      CCAvg           Mortgage       Personal.Loan   Securities.Account
-##  Min.   :0.0000   Min.   :0.00000   Min.   :0.000   Min.   :0.0000    
-##  1st Qu.:0.0700   1st Qu.:0.00000   1st Qu.:0.000   1st Qu.:0.0000    
-##  Median :0.1500   Median :0.00000   Median :0.000   Median :0.0000    
-##  Mean   :0.1938   Mean   :0.08897   Mean   :0.096   Mean   :0.1044    
-##  3rd Qu.:0.2500   3rd Qu.:0.15906   3rd Qu.:0.000   3rd Qu.:0.0000    
-##  Max.   :1.0000   Max.   :1.00000   Max.   :1.000   Max.   :1.0000    
-##    CD.Account         Online         CreditCard     Education.E1   
-##  Min.   :0.0000   Min.   :0.0000   Min.   :0.000   Min.   :0.0000  
-##  1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:0.000   1st Qu.:0.0000  
-##  Median :0.0000   Median :1.0000   Median :0.000   Median :0.0000  
-##  Mean   :0.0604   Mean   :0.5968   Mean   :0.294   Mean   :0.4192  
-##  3rd Qu.:0.0000   3rd Qu.:1.0000   3rd Qu.:1.000   3rd Qu.:1.0000  
-##  Max.   :1.0000   Max.   :1.0000   Max.   :1.000   Max.   :1.0000  
-##   Education.E2     Education.E3   
-##  Min.   :0.0000   Min.   :0.0000  
-##  1st Qu.:0.0000   1st Qu.:0.0000  
-##  Median :0.0000   Median :0.0000  
-##  Mean   :0.2806   Mean   :0.3002  
-##  3rd Qu.:1.0000   3rd Qu.:1.0000  
-##  Max.   :1.0000   Max.   :1.0000</code></pre>
-<pre class="r"><code>#Data partitioning as Train, Test and Validation Data
-
-set.seed(10)
-Test_Index &lt;- createDataPartition(Default_Norm$Personal.Loan,p=0.2, list=FALSE) # 20% Test data
+UniversalBank &lt;- UniversalBank[, c(-6)]</code></pre>
+<ul>
+<li>Partitioning the data into training as 50%, validation as 30% and Test as 20% sets; Normalization of the data :-</li>
+</ul>
+<pre class="r"><code>set.seed(10)
+Test_Index &lt;- createDataPartition(UniversalBank$Age,p=0.2, list=FALSE) # 20% Test data
 Test_Data &lt;- UniversalBank[Test_Index,]
 TraVal_Data &lt;- UniversalBank[-Test_Index,]
 
-Train_Index = createDataPartition(TraVal_Data$Personal.Loan,p=0.625, list=FALSE) # 50% of remaining data is training and 30% is validation data.
+Train_Index = createDataPartition(TraVal_Data$Age,p=0.625, list=FALSE) # 50% of remaining data is training and 30% is validation data.
 Train_Data = TraVal_Data[Train_Index,]
-Validation_Data = TraVal_Data[-Train_Index,] 
+Validation_data = TraVal_Data[-Train_Index,] 
 summary(Train_Data)</code></pre>
 <pre><code>##       Age          Experience        Income           Family     
 ##  Min.   :23.00   Min.   :-3.00   Min.   :  8.00   Min.   :1.000  
 ##  1st Qu.:35.00   1st Qu.:10.00   1st Qu.: 39.00   1st Qu.:1.000  
 ##  Median :45.00   Median :20.00   Median : 64.00   Median :2.000  
-##  Mean   :45.39   Mean   :20.13   Mean   : 74.05   Mean   :2.403  
-##  3rd Qu.:55.00   3rd Qu.:30.00   3rd Qu.: 99.00   3rd Qu.:3.000  
-##  Max.   :67.00   Max.   :43.00   Max.   :218.00   Max.   :4.000  
-##      CCAvg           Mortgage      Personal.Loan    Securities.Account
-##  Min.   : 0.000   Min.   :  0.00   Min.   :0.0000   Min.   :0.000     
-##  1st Qu.: 0.700   1st Qu.:  0.00   1st Qu.:0.0000   1st Qu.:0.000     
-##  Median : 1.500   Median :  0.00   Median :0.0000   Median :0.000     
-##  Mean   : 1.964   Mean   : 54.72   Mean   :0.0948   Mean   :0.106     
-##  3rd Qu.: 2.600   3rd Qu.: 98.00   3rd Qu.:0.0000   3rd Qu.:0.000     
-##  Max.   :10.000   Max.   :582.00   Max.   :1.0000   Max.   :1.000     
-##    CD.Account         Online         CreditCard     Education.E1  
-##  Min.   :0.0000   Min.   :0.0000   Min.   :0.000   Min.   :0.000  
-##  1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:0.000   1st Qu.:0.000  
-##  Median :0.0000   Median :1.0000   Median :0.000   Median :0.000  
-##  Mean   :0.0612   Mean   :0.5964   Mean   :0.298   Mean   :0.414  
-##  3rd Qu.:0.0000   3rd Qu.:1.0000   3rd Qu.:1.000   3rd Qu.:1.000  
-##  Max.   :1.0000   Max.   :1.0000   Max.   :1.000   Max.   :1.000  
+##  Mean   :45.38   Mean   :20.13   Mean   : 73.84   Mean   :2.401  
+##  3rd Qu.:55.00   3rd Qu.:30.00   3rd Qu.: 98.00   3rd Qu.:3.000  
+##  Max.   :67.00   Max.   :43.00   Max.   :224.00   Max.   :4.000  
+##      CCAvg           Mortgage      Personal.Loan     Securities.Account
+##  Min.   : 0.000   Min.   :  0.00   Min.   :0.00000   Min.   :0.000     
+##  1st Qu.: 0.700   1st Qu.:  0.00   1st Qu.:0.00000   1st Qu.:0.000     
+##  Median : 1.500   Median :  0.00   Median :0.00000   Median :0.000     
+##  Mean   : 1.921   Mean   : 57.33   Mean   :0.09876   Mean   :0.104     
+##  3rd Qu.: 2.600   3rd Qu.: 99.00   3rd Qu.:0.00000   3rd Qu.:0.000     
+##  Max.   :10.000   Max.   :617.00   Max.   :1.00000   Max.   :1.000     
+##    CD.Account          Online         CreditCard      Education.E1   
+##  Min.   :0.00000   Min.   :0.0000   Min.   :0.0000   Min.   :0.0000  
+##  1st Qu.:0.00000   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:0.0000  
+##  Median :0.00000   Median :1.0000   Median :0.0000   Median :0.0000  
+##  Mean   :0.06357   Mean   :0.6026   Mean   :0.2895   Mean   :0.4162  
+##  3rd Qu.:0.00000   3rd Qu.:1.0000   3rd Qu.:1.0000   3rd Qu.:1.0000  
+##  Max.   :1.00000   Max.   :1.0000   Max.   :1.0000   Max.   :1.0000  
 ##   Education.E2     Education.E3   
 ##  Min.   :0.0000   Min.   :0.0000  
 ##  1st Qu.:0.0000   1st Qu.:0.0000  
 ##  Median :0.0000   Median :0.0000  
-##  Mean   :0.2764   Mean   :0.3096  
+##  Mean   :0.2723   Mean   :0.3115  
 ##  3rd Qu.:1.0000   3rd Qu.:1.0000  
 ##  Max.   :1.0000   Max.   :1.0000</code></pre>
-<pre class="r"><code>Train_Predictors&lt;-Train_Data[,-7]
-validation_Predictors&lt;- Validation_Data[,-7]
-Train_labels &lt;- Train_Data[,7]
-Validation_labels  &lt;-Validation_Data[,7]
-test_labels &lt;- Test_Data[,7]
-test_predictors &lt;- Test_Data[,-7]</code></pre>
-<pre class="r"><code>#K-NN classification 
+<pre class="r"><code>#Normalization
 
-PredictedTest_labels &lt;- knn(Train_Predictors, test_predictors, cl=Train_labels, k=3, prob = TRUE)
+Norm&lt;-preProcess(Train_Data, method = c(&quot;center&quot;,&quot;scale&quot;))
+Train_Norm&lt;-predict(Norm,Train_Data)
+Test_Norm&lt;-predict(Norm,Test_Data)
+Validation_Norm&lt;-predict(Norm,Validation_data)
+All_Data_Norm&lt;-predict(Norm,UniversalBank)
+
+Train_Predictors&lt;-Train_Norm[,-7]
+Test_predictors &lt;- Test_Norm[,-7]
+validation_Predictors&lt;- Validation_Norm[,-7]
+All_Data_Predictors&lt;- All_Data_Norm[,-7]
+
+Train_labels &lt;-factor(Train_Data[,7], levels=c(0,1), labels = c(&quot;NO&quot;,&quot;YES&quot;))
+Validation_labels  &lt;-factor(Validation_data[,7], levels=c(0,1), labels = c(&quot;NO&quot;,&quot;YES&quot;))
+Test_labels &lt;- factor(Test_Data[,7], levels=c(0,1), labels = c(&quot;NO&quot;,&quot;YES&quot;))
+All_Data_labels &lt;- factor(UniversalBank[,7], levels=c(0,1), labels = c(&quot;NO&quot;,&quot;YES&quot;))</code></pre>
+<ul>
+<li>k-NN classification using k=3 :-</li>
+</ul>
+<pre class="r"><code>PredictedTest_labels &lt;- knn(Train_Predictors, Test_predictors, cl=Train_labels, k=3, prob = TRUE)
 str(PredictedTest_labels)</code></pre>
-<pre><code>##  Factor w/ 2 levels &quot;0&quot;,&quot;1&quot;: 1 1 1 1 1 1 1 1 1 2 ...
-##  - attr(*, &quot;prob&quot;)= num [1:1000] 1 1 1 0.667 1 ...</code></pre>
+<pre><code>##  Factor w/ 2 levels &quot;NO&quot;,&quot;YES&quot;: 1 1 1 2 1 1 1 1 1 2 ...
+##  - attr(*, &quot;prob&quot;)= num [1:1001] 1 0.667 1 0.667 1 ...
+##  - attr(*, &quot;nn.index&quot;)= int [1:1001, 1:3] 89 2375 2434 1596 1670 758 1187 2497 1289 1415 ...
+##  - attr(*, &quot;nn.dist&quot;)= num [1:1001, 1:3] 1.281 1.503 0.247 1.683 0.288 ...</code></pre>
 <pre class="r"><code>PredictedValid_labels &lt;- knn(Train_Predictors, validation_Predictors, cl=Train_labels, k=3, prob = TRUE)
 str(PredictedValid_labels)</code></pre>
-<pre><code>##  Factor w/ 2 levels &quot;0&quot;,&quot;1&quot;: 1 1 1 1 1 1 1 1 1 1 ...
-##  - attr(*, &quot;prob&quot;)= num [1:1500] 1 1 1 1 1 ...</code></pre>
-<pre class="r"><code>#confusion Matrix of the test set with the training and validation sets
-
-library(gmodels)
+<pre><code>##  Factor w/ 2 levels &quot;NO&quot;,&quot;YES&quot;: 1 1 1 1 1 1 1 1 1 1 ...
+##  - attr(*, &quot;prob&quot;)= num [1:1498] 1 1 1 1 1 1 1 1 1 1 ...
+##  - attr(*, &quot;nn.index&quot;)= int [1:1498, 1:3] 868 777 2093 1852 326 243 1432 688 1179 802 ...
+##  - attr(*, &quot;nn.dist&quot;)= num [1:1498, 1:3] 0.545 0.915 0.375 0.924 0.151 ...</code></pre>
+<p>*Confusion matrix:-</p>
+<pre class="r"><code>library(gmodels)
 CrossTable(x=Validation_labels, y=PredictedValid_labels, prop.chisq = FALSE)</code></pre>
 <pre><code>## 
 ##  
@@ -1829,28 +1794,28 @@ CrossTable(x=Validation_labels, y=PredictedValid_labels, prop.chisq = FALSE)</co
 ## |-------------------------|
 ## 
 ##  
-## Total Observations in Table:  1500 
+## Total Observations in Table:  1498 
 ## 
 ##  
 ##                   | PredictedValid_labels 
-## Validation_labels |         0 |         1 | Row Total | 
+## Validation_labels |        NO |       YES | Row Total | 
 ## ------------------|-----------|-----------|-----------|
-##                 0 |      1320 |        38 |      1358 | 
-##                   |     0.972 |     0.028 |     0.905 | 
-##                   |     0.932 |     0.452 |           | 
-##                   |     0.880 |     0.025 |           | 
+##                NO |      1352 |         6 |      1358 | 
+##                   |     0.996 |     0.004 |     0.907 | 
+##                   |     0.960 |     0.067 |           | 
+##                   |     0.903 |     0.004 |           | 
 ## ------------------|-----------|-----------|-----------|
-##                 1 |        96 |        46 |       142 | 
-##                   |     0.676 |     0.324 |     0.095 | 
-##                   |     0.068 |     0.548 |           | 
-##                   |     0.064 |     0.031 |           | 
+##               YES |        56 |        84 |       140 | 
+##                   |     0.400 |     0.600 |     0.093 | 
+##                   |     0.040 |     0.933 |           | 
+##                   |     0.037 |     0.056 |           | 
 ## ------------------|-----------|-----------|-----------|
-##      Column Total |      1416 |        84 |      1500 | 
-##                   |     0.944 |     0.056 |           | 
+##      Column Total |      1408 |        90 |      1498 | 
+##                   |     0.940 |     0.060 |           | 
 ## ------------------|-----------|-----------|-----------|
 ## 
 ## </code></pre>
-<pre class="r"><code>CrossTable(x=test_labels, y=PredictedTest_labels, prop.chisq = FALSE)</code></pre>
+<pre class="r"><code>CrossTable(x=Test_labels, y=PredictedTest_labels, prop.chisq = FALSE)</code></pre>
 <pre><code>## 
 ##  
 ##    Cell Contents
@@ -1862,29 +1827,30 @@ CrossTable(x=Validation_labels, y=PredictedValid_labels, prop.chisq = FALSE)</co
 ## |-------------------------|
 ## 
 ##  
-## Total Observations in Table:  1000 
+## Total Observations in Table:  1001 
 ## 
 ##  
 ##              | PredictedTest_labels 
-##  test_labels |         0 |         1 | Row Total | 
+##  Test_labels |        NO |       YES | Row Total | 
 ## -------------|-----------|-----------|-----------|
-##            0 |       861 |        38 |       899 | 
-##              |     0.958 |     0.042 |     0.899 | 
-##              |     0.932 |     0.500 |           | 
-##              |     0.861 |     0.038 |           | 
+##           NO |       902 |         6 |       908 | 
+##              |     0.993 |     0.007 |     0.907 | 
+##              |     0.954 |     0.107 |           | 
+##              |     0.901 |     0.006 |           | 
 ## -------------|-----------|-----------|-----------|
-##            1 |        63 |        38 |       101 | 
-##              |     0.624 |     0.376 |     0.101 | 
-##              |     0.068 |     0.500 |           | 
-##              |     0.063 |     0.038 |           | 
+##          YES |        43 |        50 |        93 | 
+##              |     0.462 |     0.538 |     0.093 | 
+##              |     0.046 |     0.893 |           | 
+##              |     0.043 |     0.050 |           | 
 ## -------------|-----------|-----------|-----------|
-## Column Total |       924 |        76 |      1000 | 
-##              |     0.924 |     0.076 |           | 
+## Column Total |       945 |        56 |      1001 | 
+##              |     0.944 |     0.056 |           | 
 ## -------------|-----------|-----------|-----------|
 ## 
 ## </code></pre>
-<p>#The Accuracy for the Validation Data is: 91.06%</p>
-<p>#The Accuracy for the Testing Data is: 90%</p>
+<div id="when-data-was-partitioned-as-60-training-and-40-as-validation-data-the-hypertuned-k-value-was-3.-using-k3-the-accuracy-derived-was-96.8.-but-when-the-data-was-partitioned-as-train-50-validation-30-and-test-20-while-using-k3-acuracy-derived-for-validation-data-is-95.86-and-testing-data-is-95.10.-they-accuracy-might-have-decreased-due-to-different-partition-variables." class="section level1">
+<h1>When data was partitioned as 60% training and 40% as validation data, the hypertuned k value was 3. Using k=3 the accuracy derived was 96.8%. But when the data was partitioned as train 50% validation 30% and test 20%, while using k=3; Acuracy derived for Validation data is 95.86% and testing data is 95.10%. They accuracy might have decreased due to different partition variables.</h1>
+</div>
 
 
 
