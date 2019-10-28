@@ -1,0 +1,103 @@
+---
+title: "R/Git"
+author: "Amruta"
+date: "10/28/2019"
+output: html_document
+---
+Problem :-
+
+This assignment will concentrate on using R and Git. Specifically, you will do the following:
+
+1) Download a dataset from the web. You may use any source, but specify the source in       your code. Also ensure that the data has a mix of quantitative and qualitative           (categorical) variables.
+2) Import the dataset into R
+3) Print out descriptive statistics for a selection of quantitative and categorical         variables.
+4) Transform at least one variable. It doesn't matter what the transformation is.
+5) Plot at least one quantitative variable, and one scatterplot
+6) Upload your R program, and any associated datafiles to your git account. Remember to     create    a separate repository for this class.
+7) Paste the address to your repository in the answer box here in BB.
+
+Solution :-
+
+* Downloading a dataset from the web & Importing the dataset into R :- 
+
+```{r}
+
+#source-https://dasl.datadescription.com/datafiles/?_sf_s=archery&_sfm_cases=4+59943
+
+Archery<-read.csv("Archery Data.csv") #assign variable
+
+```
+
+* Descriptive statistics for a selection of quantitative and categorical variables :-
+
+```{r}
+
+# Mean
+mean(Archery$Total_score)
+
+# Median
+median(Archery$X1st_Half)
+
+# Range
+range(Archery$X1st_Half)
+
+# Variance
+var(Archery$X2nd_Half)
+
+# Standard Deviation
+sd(Archery$X2nd_Half)
+
+# Highest of total score amongst all Archer Women
+max(Archery$Total_score)
+
+# Lowest of total score amongst X1st half
+min(Archery$X1st_Half)
+
+# Which archer has highest total score
+which.max(Archery$Total_score)
+
+# Which Archer women has highest total score(shows all the columns)
+Archery[which.max(Archery$Total_score),]
+
+# Which Archer women has lowest total score(shows all the columns)
+Archery[which.min(Archery$Total_score),]
+
+# To get index of the X1st Half (order always sort values ascendingly)
+order(Archery$X1st_Half)
+
+```
+
+* Transformation of variables :-
+
+```{r}
+
+library(rcompanion)
+
+#Log transformation
+
+Total_log <-log(Archery$Total_score)
+Total_log
+plotNormalHistogram(Total_log, main = "Total Score")
+
+#squareroot transformation
+
+Total_sqrt = sqrt(Archery$Total_score)
+Total_sqrt
+plotNormalHistogram(Total_sqrt, main = "Total Score")
+
+```
+
+* Plotting the quantitative variable and a scatter plot :-
+
+```{r}
+
+# Bar plot
+
+barplot(Archery$Total_score,xlab="Count",ylab = "Total score",main = "Count Vs Total score")
+
+# Scatter plot
+
+plot.default(Archery$X1st_Half,Archery$X2nd_Half, xlab = "X1st Half",ylab = "X2nd Half",main ="X1st Half Vs X2nd Half")
+
+```
+
