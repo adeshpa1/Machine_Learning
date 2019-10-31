@@ -1,0 +1,180 @@
+---
+title: "K-means"
+author: "Amruta"
+date: "10/31/2019"
+output: html_document
+---
+
+Problem :-
+
+The dataset on American College and University Rankings contains information on 1302 American colleges and universities offering an undergraduate program. For each university, there are 17 measurements, including continuous measurements (such as tuition and graduation rate) and categorical measurements (such as location by state and whether it is a private or public school).
+Note that many records are missing some measurements. 
+
+* Solution :-
+
+* Libraries and reading data:-
+
+```{r}
+
+library(ISLR)
+library(dplyr)
+library(tidyverse)
+library(factoextra)
+library(flexclust)
+
+Univ <- read.csv("Universities.csv")
+
+```
+
+* Replacing the NA of 'Tuft University' by the mean value of the respective variable :-
+
+```{r}
+
+Tuft_univ <- Univ[which(Univ$College.Name == "Tufts University"),]
+
+Tuft_univ$X..PT.undergrad <- mean(Univ$X..PT.undergrad, na.rm = TRUE)
+
+```
+* Tuft University row is missing the value in column 7. The NA is replaced by the mean value of the PT.Undergrad variable. 
+
+
+(a) Remove all records with missing measurements from the dataset:-
+
+```{r}
+
+Univ <- na.omit(Univ)
+
+Norm_Univ <- scale(Univ[c(-1,-2,-3)])
+
+```
+* Removed all the missing values from the dataset and Normalized the data. Normalization is done excluding column 1,2 and 3 as they contain the categorical values.
+
+
+(b) For all the continuous measurements, run K-Means clustering. Make sure to normalize the measurements. How many clusters seem reasonable for describing these data? What was your optimal K?
+
+```{r}
+
+fviz_nbclust(Norm_Univ, kmeans, method = "wss")
+fviz_nbclust(Norm_Univ, kmeans, method = "silhouette")
+
+K_model <- kmeans(Norm_Univ, centers = 3, nstart = 10)
+
+
+University_K_model <- cbind(Univ,K_model$cluster)
+
+fviz_cluster(K_model, data = Norm_Univ)
+
+```
+
+* Data is been Normalized and then applied K-means Clustering. Two clusters (Public and Private) seems to be more efficient way of describing this dataset. But as the optimal K is 3, hence data is divided into 3 clusters. 
+
+
+(c) Compare the summary statistics for each cluster and describe each cluster in this context (e.g., “Universities with high tuition, low acceptance rate...”) :-
+
+```{r}
+
+a<- K_model$centers
+a
+
+```
+
+* Cluster 1 :- Low Rated Universities
+
+Lowest number of Application received.
+Received lowest number of Application accepted.
+Lowest number of New Student received.
+Minimum number of Application from top 10 Universities.
+Minimum of Application from top 25 Universities.
+It has low Full Time Undergrad applicants.
+Low number of Part Time Undergrad applicants but slight more than Cluster 2.
+Bad In-state and out-state tution than cluster 2.
+Lowest on room cost and board than Cluster 2 and 3.
+Lowest on additional fees.
+Minimum on estimated book cost.
+Average estimated personal cost.
+Bad ratio of Faculty with PhD.
+Average ratio of Student and Faculty.
+Lowest Graduation rate.
+
+
+* Cluster 2 :- Average Rated Universities
+
+Low number of Application received but good than Cluster 1.
+Received low number of Application accepted.
+Low on number of New Student enrolled.
+Highest number of Application from top 10 Universities.
+Good number of Application from top 25 Universities.
+Low number of Full Time Undergrad applicants.
+Lowest number of Part Time Undergrad applicants.
+Highest In-state tution and Out-of-state tution than both cluster.
+High on room cost and board than both the cluster.
+Low additional fees.
+Good on estimated book cost .
+Lowest in estimated personal .
+Good ratio of Faculty with PhD.
+Lowest ratio of Student and Faculty.
+Highest Graduation rate.
+
+
+* Cluster 3 :- High Rated Universities
+
+High number of Applications received.
+Received high number of Application accepted.
+Highest number of New Student received.
+Average number of Application from top 10 Universities.
+Good number of Application from top 25 Universities.
+High number of Full Time Undergrad applicants.
+High number of Part Time Undergrad applicants.
+Lowest In-state tution than both cluster.
+Low Out-state tution than Cluster 2 but slightly higher than Cluster 1.
+Low on room cost and board than Cluster 1.
+Highest additional fees.
+High on estimated book cost and personal expenses.
+Good ratio of Faculty with PhD.
+Highest ration of Student and Faculty.
+Low Graduation rate.
+
+
+(d)	Use the categorical measurements that were not used in the analysis (State and Private/Public) to characterize the different clusters. Is there any relationship between the clusters and the categorical information? :-
+                                            
+```{r}
+
+University_K_model <- cbind(Univ,K_model$cluster)
+
+table(University_K_model$State, University_K_model$`K_model$cluster`)
+
+table(University_K_model$Public..1...Private..2., University_K_model$`K_model$cluster`)
+
+```
+* Considering the categorical measurements and doing its analysis; the relationship derived shows that : Cluster 1 (Low Rated Universities) displays both Public and Private. Whereas, Cluster 2 shows the Private Universities and Cluster 3 shows the Public Universities. 
+
+
+(e)	What other external information can explain the contents of some or all of these clusters? :-
+
+```{r}
+
+K_model$withinss
+
+K_model$iter
+
+```
+* Withinss:- Vector of within-cluster sum of squares, one component per cluster :- 2562.342 ,1424.892, 1044.680
+* Iter :- The number of (outer) iterations :- 3
+
+
+(f)	Consider Tufts University, which is missing some information. Compute the Euclidean distance of this record from each of the clusters that you found above (using only the measurements that you have). Which cluster is it closest to? Impute the missing values for Tufts by taking the average of the cluster on those measurements. :-
+
+```{r}
+
+University <- rbind(Univ, Tuft_univ)
+
+University_normalized <- scale(University[c(-1,-2,-3)])
+
+K_model_Tufts <- kmeans(University_normalized, centers = 3, nstart = 25)
+
+cbind(Tuft_univ, Cluster = tail(K_model_Tufts$cluster, 1))
+
+K_model_Tufts$withinss
+
+```
+* Cluster 3 (High Rated Universities) is the closest cluster for the Tuft University. 
