@@ -408,7 +408,7 @@ library(dplyr)</code></pre>
 </ul>
 <pre class="r"><code>Tuft_univ &lt;- Univ[which(Univ$College.Name == &quot;Tufts University&quot;),]
 
-Tuft_univ$X..PT.undergrad &lt;- mean(Univ$X..PT.undergrad, na.rm = TRUE)</code></pre>
+#Tuft_univ$X..PT.undergrad &lt;- mean(Univ$X..PT.undergrad, na.rm = TRUE)</code></pre>
 <ul>
 <li>Tuft University row is missing the value in column 7. The NA is replaced by the mean value of the PT.Undergrad variable.</li>
 </ul>
@@ -556,6 +556,31 @@ table(University_K_model$State, University_K_model$`K_model$cluster`)</code></pr
 <ol start="6" style="list-style-type: lower-alpha">
 <li>Consider Tufts University, which is missing some information. Compute the Euclidean distance of this record from each of the clusters that you found above (using only the measurements that you have). Which cluster is it closest to? Impute the missing values for Tufts by taking the average of the cluster on those measurements. :-</li>
 </ol>
+<pre class="r"><code>dist(rbind(Tuft_univ[, -c(1, 2, 3,10)], K_model$centers[1,]))</code></pre>
+<pre><code>##        476
+## 2 29819.09</code></pre>
+<pre class="r"><code>dist(rbind(Tuft_univ[, -c(1, 2, 3,10)], K_model$centers[2,]))</code></pre>
+<pre><code>##       476
+## 2 29817.8</code></pre>
+<pre class="r"><code>dist(rbind(Tuft_univ[, -c(1, 2, 3,10)], K_model$centers[3,]))</code></pre>
+<pre><code>##        476
+## 2 29816.76</code></pre>
+<pre class="r"><code>b&lt;-filter(University_K_model, University_K_model$`K_model$cluster` ==3)
+cw &lt;- mean(b[,c(10)])
+Tuft_univ$X..PT.undergrad &lt;- cw
+Tuft_univ</code></pre>
+<pre><code>##         College.Name State Public..1...Private..2. X..appli..rec.d
+## 476 Tufts University    MA                       2            7614
+##     X..appl..accepted X..new.stud..enrolled X..new.stud..from.top.10.
+## 476              3605                  1205                        60
+##     X..new.stud..from.top.25. X..FT.undergrad X..PT.undergrad
+## 476                        90            4598        3500.565
+##     in.state.tuition out.of.state.tuition room board add..fees
+## 476            19701                19701 3038  2930       503
+##     estim..book.costs estim..personal.. X..fac..w.PHD stud..fac..ratio
+## 476               600               928            99             10.3
+##     Graduation.rate
+## 476              92</code></pre>
 <pre class="r"><code>University &lt;- rbind(Univ, Tuft_univ)
 
 University_normalized &lt;- scale(University[c(-1,-2,-3)])
@@ -568,7 +593,7 @@ cbind(Tuft_univ, Cluster = tail(K_model_Tufts$cluster, 1))</code></pre>
 ##     X..appl..accepted X..new.stud..enrolled X..new.stud..from.top.10.
 ## 476              3605                  1205                        60
 ##     X..new.stud..from.top.25. X..FT.undergrad X..PT.undergrad
-## 476                        90            4598        1081.527
+## 476                        90            4598        3500.565
 ##     in.state.tuition out.of.state.tuition room board add..fees
 ## 476            19701                19701 3038  2930       503
 ##     estim..book.costs estim..personal.. X..fac..w.PHD stud..fac..ratio
@@ -576,7 +601,7 @@ cbind(Tuft_univ, Cluster = tail(K_model_Tufts$cluster, 1))</code></pre>
 ##     Graduation.rate Cluster
 ## 476              92       3</code></pre>
 <pre class="r"><code>K_model_Tufts$withinss</code></pre>
-<pre><code>## [1] 2559.975 1045.113 1430.580</code></pre>
+<pre><code>## [1] 2559.546 1043.668 1434.427</code></pre>
 <ul>
 <li>Cluster 3 (High Rated Universities) is the closest cluster for the Tuft University.</li>
 </ul>

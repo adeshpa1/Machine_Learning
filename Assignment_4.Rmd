@@ -2,7 +2,10 @@
 title: "K-means"
 author: "Amruta"
 date: "10/31/2019"
-output: html_document
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
 ---
 
 Problem :-
@@ -32,7 +35,7 @@ Univ <- read.csv("Universities.csv")
 
 Tuft_univ <- Univ[which(Univ$College.Name == "Tufts University"),]
 
-Tuft_univ$X..PT.undergrad <- mean(Univ$X..PT.undergrad, na.rm = TRUE)
+#Tuft_univ$X..PT.undergrad <- mean(Univ$X..PT.undergrad, na.rm = TRUE)
 
 ```
 * Tuft University row is missing the value in column 7. The NA is replaced by the mean value of the PT.Undergrad variable. 
@@ -72,7 +75,6 @@ fviz_cluster(K_model, data = Norm_Univ)
 (c) Compare the summary statistics for each cluster and describe each cluster in this context (e.g., “Universities with high tuition, low acceptance rate...”) :-
 
 ```{r}
-
 a<- K_model$centers
 a
 
@@ -165,6 +167,19 @@ K_model$iter
 (f)	Consider Tufts University, which is missing some information. Compute the Euclidean distance of this record from each of the clusters that you found above (using only the measurements that you have). Which cluster is it closest to? Impute the missing values for Tufts by taking the average of the cluster on those measurements. :-
 
 ```{r}
+dist(rbind(Tuft_univ[, -c(1, 2, 3,10)], K_model$centers[1,]))
+dist(rbind(Tuft_univ[, -c(1, 2, 3,10)], K_model$centers[2,]))
+dist(rbind(Tuft_univ[, -c(1, 2, 3,10)], K_model$centers[3,]))
+```
+
+```{r}
+b<-filter(University_K_model, University_K_model$`K_model$cluster` ==3)
+cw <- mean(b[,c(10)])
+Tuft_univ$X..PT.undergrad <- cw
+Tuft_univ
+```
+
+```{r}
 
 University <- rbind(Univ, Tuft_univ)
 
@@ -177,4 +192,5 @@ cbind(Tuft_univ, Cluster = tail(K_model_Tufts$cluster, 1))
 K_model_Tufts$withinss
 
 ```
+
 * Cluster 3 (High Rated Universities) is the closest cluster for the Tuft University. 
