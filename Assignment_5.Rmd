@@ -1,0 +1,134 @@
+---
+title: "Hierarchial Clustering"
+author: "Amruta"
+date: "11/14/2019"
+output: html_document
+---
+Problem :-
+
+The dataset Cereals.csv includes nutritional information, store display, and consumer ratings for 77 breakfast cereals.
+
+Data Preprocessing. Remove all cereals with missing values.
+
+(a) Apply hierarchical clustering to the data using Euclidean distance to the normalized measurements. Use Agnes to compare the clustering from single linkage, complete linkage, average linkage, and Ward. Choose the best method.
+
+Solution :-
+
+* Using the libraries, reading the data and normalizing the data. 
+
+```{r}
+
+library(caret)
+library(ISLR)
+library(stats)
+library(cluster)
+Cereals_data<-read.csv("Cereals.csv")
+rownames(Cereals_data)<-Cereals_data$name
+Cereals_data <- Cereals_data[-1]
+Norm_Cereals<-scale(Cereals_data[c(-1,-2,-12)])
+
+```
+
+* Binding the categorical data with the data and omiting the NA's from the dataset :-
+
+```{r}
+
+Norm_Cereals<-cbind(Cereals_data[c(1,2,12)],Norm_Cereals)
+Cereals<-na.omit(Norm_Cereals)
+
+```
+
+* Applying the hierarchical clustering to the data using Euclidean distance :-
+
+```{r}
+
+Cereals_Euc<- dist(Norm_Cereals, method = "euclidean")
+
+```
+
+*Use Agnes to compare the clustering from  single linkage, complete linkage, average linkage, and Ward. Choose the best method :-
+
+```{r}
+
+HC_single <- agnes(Cereals,method = "single")
+HC_single$ac
+
+HC_complete <-agnes(Cereals,method = "complete")
+HC_complete$ac
+
+HC_average <-agnes(Cereals,method = "average")
+HC_average$ac
+
+HC_Ward<-agnes(Cereals,method = "ward")
+HC_Ward$ac
+
+```
+
+When the single, complete, average and Ward methods uses Agnes to compare the cluster; best method chose is Ward's. The linkages when compared with the Agglomerative coefficients, Ward derives the 0.9002742 which is most nearest to 1 in all the linkages.  Hence, Ward is the best method.
+
+* Plotting the dendrogram of the Ward's :-
+```{r}
+
+pltree(HC_Ward, cex = 0.6, hang = -1, main = "Dendrogram of agnes")
+
+```
+
+(b) How many clusters would you choose?
+
+* As stated above, best method is Ward's. Hence, using Ward's for clustering the data and applying the hierarchical clustering using Euclidean distance :-
+
+```{r}
+
+HC_Ward_Euc<- hclust(Cereals_Euc, method = "ward.D2" )
+
+```
+
+When we choose number of clusters as 2 ,ie. is k=2
+
+```{r}
+
+plot(HC_Ward_Euc, cex = 0.6)
+rect.hclust(HC_Ward_Euc, k = 2, border = 1:2)
+
+```
+
+* The height of each of the branch tells you about variations in the nutrients content in cereals. Taller the branch more cereals with dissimilarities are included in cluster which will increase the nutrition value of the cluster. When k=2, eventhough we can compare it with heights; contents of each cluster will be almost same i.e. nutrition value will be similar. Hence, not considering k=2. 
+
+* When we choose number of clusters as 4 ,ie. is k=4
+
+```{r}
+
+plot(HC_Ward_Euc, cex = 0.6)
+rect.hclust(HC_Ward_Euc, k = 4, border = 1:4)
+
+```
+
+* As discussed above, the height of each branch states the nutririon value of the cluster. The heights as seen above varies for every cluster. That means, the cluster cannot be compared on the nutrition basis. So, we can't consider k as 4. 
+
+```{r}
+
+plot(HC_Ward_Euc, cex = 0.6)
+rect.hclust(HC_Ward_Euc, k = 6, border = 1:6)
+
+```
+
+* When we take into account as k=6, the height of all the clusters lies between 5 to 10. As interpreted from above dendrorgram the nutrition value of each cluster varies and hence, can be compared. As well the contents of the cluster will not be same. Hence, considering k=6. 
+
+* Number of clusters : k=6
+
+
+(d) The elementary public schools would like to choose a set of cereals to include in their daily cafeterias. Every day a different cereal is offered, but all cereals should support a healthy diet. For this goal, you are requested to find a cluster of “healthy cereals.” Should the data be normalized? If not, how should they be used in the cluster analysis?
+
+Solution :-
+
+```{r}
+
+clusters <- cutree(HC_Ward_Euc, k=6)
+
+Norm_Cereals <- cbind(Norm_Cereals, clusters)
+
+plot(x=Norm_Cereals$clusters, y = Norm_Cereals$rating)
+
+```
+
+* Interpreting from the above, the cluster 5 has the greater height than other clusters. Higher height high is the nutrition content of the cluster. Hence, we can offer cluster 5 as 'Healthy cereals' which we can offer to the the elementary public schools in their daily cafeterias. 
